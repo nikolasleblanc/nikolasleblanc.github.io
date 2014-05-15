@@ -7,6 +7,8 @@ GameState.prototype.preload = function() {
  //We're preloading all the assets for the game to avoid any potential load-lag later.
     this.game.load.image('player', 'assets/plane.png');
     this.game.load.image('blimp', 'assets/blimp.png');
+    this.game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
+
 };
 
 GameState.prototype.create = function() {
@@ -28,16 +30,21 @@ GameState.prototype.create = function() {
     );
 
     this.textGroup = game.add.group();
-
+    this.textTimer = game.time.events.loop(Phaser.Timer.SECOND*1.5, function () {
+        var myLetter = this.game.add.existing(
+            new Letter(this)
+        );
+        this.textGroup.add(myLetter);
+    }, this);
 
 
     this.blimpGroup = game.add.group();
-		this.blimpTimer = game.time.events.loop(Phaser.Timer.SECOND*2.5, function(){
-		    var blimp = this.game.add.existing(
-		        new Blimp(this, this.player)
-		    );
-		    this.blimpGroup.add(blimp);
-		}, this);
+	this.blimpTimer = game.time.events.loop(Phaser.Timer.SECOND*2.5, function(){
+	    var blimp = this.game.add.existing(
+	        new Blimp(this, this.player)
+	    );
+	    this.blimpGroup.add(blimp);
+	}, this);
 }
 
 GameState.prototype.update = function() {
@@ -47,24 +54,9 @@ GameState.prototype.update = function() {
         this.fpsText.setText(this.game.time.fps + ' FPS');
     }
     if(this.player.health <= 0){
-		    //We pass in the player, blimpgroup, and blimptimer in order to remove them
-		    gameOver(this.player, this.blimpGroup, this.blimpTimer);
-		}
-		if(this.textGroup.children.length < 20) {
-			this.addNewLetter();
-			console.log(this.textGroup);
-		}
-		for (var i=0; i < this.textGroup.children.length; i++) {
-			var letter = this.textGroup.children[i];
-			letter.vy += letter.ay * this.game.time.physicsElapsed;
-      letter.y += letter.vy + this.game.time.physicsElapsed;
-		}
-		for (var i=0; i < this.textGroup.children.length; i++) {
-			var letter = this.textGroup.children[i];
-			if (letter.y > stageSize.height) {
-				this.textGroup.remove(letter);
-			}
-		}
+	    //We pass in the player, blimpgroup, and blimptimer in order to remove them
+	    gameOver(this.player, this.blimpGroup, this.blimpTimer);
+	}
 
 }
 
@@ -85,9 +77,9 @@ var Player = function(game, x, y, target){
     this.health = 100;
 
     //We need a target position for our player to head to
-		this.targetPos = {x:this.x, y:this.y};
-		//And an easing constant to smooth the movement
-		this.easer = .5;
+	this.targetPos = {x:this.x, y:this.y};
+	//And an easing constant to smooth the movement
+	this.easer = .5;
 }
 
 var Blimp = function(game, player){
@@ -117,7 +109,20 @@ var Blimp = function(game, player){
     this.hit = false;
 }
 
+var Letter = function(game) {
+    //(game, x, y, font, text, size)
+    var x = Math.random()*stageSize.width;
+    var y = Math.random()*stageSize.height;
+    var letter = Math.random().toString(36).toString(36).replace(/[^a-z]+/g, '').substring(0, 1).toUpperCase();
+    Phaser.BitmapText.call(this, game, x, y, 'carrier_command', letter, 35);
+
+    this.inputEnabled = true;
+
+    this.input.enableDrag();
+}
+
 GameState.prototype.addNewLetter = function() {
+  /*
   var myletter = this.game.add.text(Math.random()*stageSize.width, Math.random()*stageSize.height, Math.random().toString(36).toString(36).replace(/[^a-z]+/g, '').substring(0, 1), { font: '16px Arial', fill: '#ffffff' });
 
   myletter.enableBody = true;
@@ -138,16 +143,50 @@ GameState.prototype.addNewLetter = function() {
   myletter.vy = 1;
   myletter.ay = 1.5;
 	this.textGroup.add(myletter);
+    */
+    //var myletter = new Phaser.BitmapText(this.game, 12, 12, "A", { font: '16px Arial', fill: '#ffffff' });
+    //var myletter = new Phaser.Text(this.game, Math.random()*stageSize.width, Math.random()*stageSize.height, Math.random().toString(36).toString(36).replace(/[^a-z]+/g, '').substring(0, 1), { font: '16px Arial', fill: '#ffffff' });
+    //var textSprite = this.game.add.sprite( 100, 500, myletter );
+    //this.textGroup.add(textSprite);
+  /*
+  myletter.enableBody = true;
+  //Again, enable physics and set velocity
+  myletter.speed = -150-Math.random()*150;
+
+  //Set a scale between 1 and 1.5 for some random sizes
+  myletter.scale.setTo(1+Math.random()*2);
+  myletter.anchor.setTo(0.5, 0.5);
+
+  //This handy event lets us check if the blimp is completely off screen. If it is, we call blimpOutOfBounds, and get rid of it.
+  myletter.checkWorldBounds = true;
+  myletter.events.onOutOfBounds.add(letterOutOfBounds, myletter);
+
+  //Whether the blimp has been hit by the player yet.
+  myletter.hit = false;
+  myletter.interactive = true;
+  myletter.vy = 1;
+  myletter.ay = 1.5;
+  var textSprite = this.game.add.sprite( 100, 500, myletter );
+    this.textGroup.add(textSprite);
+    */
+
+    //var bmpText = this.game.add.bitmapText(10, 100, 'carrier_command','Drag me around !',10);
+
+    //bmpText.inputEnabled = true;
+
+    //bmpText.input.enableDrag();
 }
 
 function letterOutOfBounds(letter) {
-		console.log("AAA");
-		//letter.kill();
+	letter.kill();
 }
 
 function blimpOutOfBounds(blimp){
     blimp.kill();
 }
+
+Letter.prototype = Object.create(Phaser.BitmapText.prototype);
+Letter.prototype.constructor = Letter;
 
 Blimp.prototype = Object.create(Phaser.Sprite.prototype);
 Blimp.prototype.constructor = Blimp;
@@ -165,7 +204,6 @@ Blimp.prototype.update = function(){
         //Detract 20 from the players health and set the alpha to represent it.
         this.player.health -= 20;
         this.player.alpha = this.player.health/100;
-        console.log(this.player.health);
 
         //Change the velocity to a downwards fall
         this.body.velocity.setTo(this.body.velocity.x/2, 100);
