@@ -43,6 +43,10 @@ GameState.prototype.create = function() {
         20, 20, '', { font: '16px Arial', fill: '#ffffff' }
     );
 
+    this.timer = this.game.add.text(
+        150, 20, '', { font: '16px Arial', fill: '#ffffff'}
+    );
+
     this.textGroup = game.add.group();
     this.textTimer = game.time.events.loop(Phaser.Timer.SECOND*1.5, function () {
         var myLetter = this.game.add.existing(
@@ -75,6 +79,7 @@ GameState.prototype.update = function() {
 	    //We pass in the player, blimpgroup, and blimptimer in order to remove them
 	    gameOver(this.player, this.blimpGroup, this.blimpTimer);
 	}
+    this.timer.setText('Time: ' + Math.abs(new Date().getTime() - startTime)/1000);
   scoreText.x = this.player.x-50;
   scoreText.y = this.player.y-50;
 }
@@ -307,3 +312,4 @@ var game = new Phaser.Game(stageSize.width, stageSize.height, Phaser.AUTO, 'game
 game.state.add('game', GameState, true);
 var score = '';
 var scoreText, cursors;
+var startTime = new Date().getTime();
