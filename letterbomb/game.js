@@ -6,13 +6,16 @@ var centerPoint = {x:stageSize.width/2, y:stageSize.height/2};
 GameState.prototype.preload = function() {
  //We're preloading all the assets for the game to avoid any potential load-lag later.
     this.game.load.image('player', 'assets/plane.png');
+    this.game.load.image('letter', 'assets/plane.png');
     this.game.load.image('blimp', 'assets/blimp.png');
-    this.game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
 
 };
 
 GameState.prototype.create = function() {
     //This is called immediately after preloading.
+    this.game.physics.startSystem(Phaser.Physics.ARCADE);
+
+    this.game.world.setBounds(0, 0, 2400, 500);
 
     this.game.stage.backgroundColor = 0x4488cc;
 
@@ -23,6 +26,17 @@ GameState.prototype.create = function() {
         this.player = new Player(this.game, 150, centerPoint.y, this.game.input)
     );
 
+
+    scoreText = this.game.add.text(16, 16, '', { fontSize: '32px', fill: '#000' });
+
+
+    cursors = this.game.input.keyboard.createCursorKeys();
+
+
+
+
+
+
     //Just for good measure, i've added an fps timer.
     this.game.time.advancedTiming = true;
     this.fpsText = this.game.add.text(
@@ -32,12 +46,14 @@ GameState.prototype.create = function() {
     this.textGroup = game.add.group();
     this.textTimer = game.time.events.loop(Phaser.Timer.SECOND*1.5, function () {
         var myLetter = this.game.add.existing(
-            new Letter(this)
+            new Letter(this, this.player)
         );
+        console.log(myLetter.letter);
         this.textGroup.add(myLetter);
     }, this);
 
 
+    /*
     this.blimpGroup = game.add.group();
 	this.blimpTimer = game.time.events.loop(Phaser.Timer.SECOND*2.5, function(){
 	    var blimp = this.game.add.existing(
@@ -45,9 +61,11 @@ GameState.prototype.create = function() {
 	    );
 	    this.blimpGroup.add(blimp);
 	}, this);
+*/
 }
 
 GameState.prototype.update = function() {
+    this.game.physics.arcade.collide(this.textGroup, this.player);
     //This method is called every frame.
     //We're not doing anything but updating the fps here.
     if (this.game.time.fps !== 0) {
@@ -57,7 +75,8 @@ GameState.prototype.update = function() {
 	    //We pass in the player, blimpgroup, and blimptimer in order to remove them
 	    gameOver(this.player, this.blimpGroup, this.blimpTimer);
 	}
-
+  scoreText.x = this.player.x-50;
+  scoreText.y = this.player.y-50;
 }
 
 var Player = function(game, x, y, target){
@@ -72,6 +91,7 @@ var Player = function(game, x, y, target){
     //We need a target position for our player to head to
     this.targetPos = {x:this.x, y:this.y};
     //And an easing constant to smooth the movement
+    this.body.allowGravity = false;
     this.easer = .5;
     //Health
     this.health = 100;
@@ -109,72 +129,34 @@ var Blimp = function(game, player){
     this.hit = false;
 }
 
-var Letter = function(game) {
-    //(game, x, y, font, text, size)
-    var x = Math.random()*stageSize.width;
+var Letter = function(game, player) {
+    var x = stageSize.width + 25;
     var y = Math.random()*stageSize.height;
     var letter = Math.random().toString(36).toString(36).replace(/[^a-z]+/g, '').substring(0, 1).toUpperCase();
-    Phaser.BitmapText.call(this, game, x, y, 'carrier_command', letter, 35);
 
-    this.inputEnabled = true;
+    Phaser.Sprite.call(this, game, x, y, 'letter');
 
-    this.input.enableDrag();
-}
+    this.player = player;
+    this.character = this.game.add.text(x-10, y+10, letter, { fontSize: '32px', fill: '#000' });
 
-GameState.prototype.addNewLetter = function() {
-  /*
-  var myletter = this.game.add.text(Math.random()*stageSize.width, Math.random()*stageSize.height, Math.random().toString(36).toString(36).replace(/[^a-z]+/g, '').substring(0, 1), { font: '16px Arial', fill: '#ffffff' });
+    //Again, enable physics and set velocity
+    this.game.physics.enable(this, Phaser.Physics.ARCADE);
+    this.body.allowGravity = false;
+    this.body.gravity.setTo(0);
+    this.body.velocity.x = -100;
+    //this.body.velocity.setTo(this.speed, 0);
 
-  myletter.enableBody = true;
-  //Again, enable physics and set velocity
-  myletter.speed = -150-Math.random()*150;
+    //Set a scale between 1 and 1.5 for some random sizes
+    this.letter = letter;
+    this.scale.setTo(.2);
+    this.anchor.setTo(0.5, 0.5);
 
-  //Set a scale between 1 and 1.5 for some random sizes
-  myletter.scale.setTo(1+Math.random()*2);
-  myletter.anchor.setTo(0.5, 0.5);
+    //This handy event lets us check if the blimp is completely off screen. If it is, we call blimpOutOfBounds, and get rid of it.
+    this.checkWorldBounds = true;
+    this.events.onOutOfBounds.add(blimpOutOfBounds, this);
 
-  //This handy event lets us check if the blimp is completely off screen. If it is, we call blimpOutOfBounds, and get rid of it.
-  myletter.checkWorldBounds = true;
-  myletter.events.onOutOfBounds.add(letterOutOfBounds, myletter);
-
-  //Whether the blimp has been hit by the player yet.
-  myletter.hit = false;
-  myletter.interactive = true;
-  myletter.vy = 1;
-  myletter.ay = 1.5;
-	this.textGroup.add(myletter);
-    */
-    //var myletter = new Phaser.BitmapText(this.game, 12, 12, "A", { font: '16px Arial', fill: '#ffffff' });
-    //var myletter = new Phaser.Text(this.game, Math.random()*stageSize.width, Math.random()*stageSize.height, Math.random().toString(36).toString(36).replace(/[^a-z]+/g, '').substring(0, 1), { font: '16px Arial', fill: '#ffffff' });
-    //var textSprite = this.game.add.sprite( 100, 500, myletter );
-    //this.textGroup.add(textSprite);
-  /*
-  myletter.enableBody = true;
-  //Again, enable physics and set velocity
-  myletter.speed = -150-Math.random()*150;
-
-  //Set a scale between 1 and 1.5 for some random sizes
-  myletter.scale.setTo(1+Math.random()*2);
-  myletter.anchor.setTo(0.5, 0.5);
-
-  //This handy event lets us check if the blimp is completely off screen. If it is, we call blimpOutOfBounds, and get rid of it.
-  myletter.checkWorldBounds = true;
-  myletter.events.onOutOfBounds.add(letterOutOfBounds, myletter);
-
-  //Whether the blimp has been hit by the player yet.
-  myletter.hit = false;
-  myletter.interactive = true;
-  myletter.vy = 1;
-  myletter.ay = 1.5;
-  var textSprite = this.game.add.sprite( 100, 500, myletter );
-    this.textGroup.add(textSprite);
-    */
-
-    //var bmpText = this.game.add.bitmapText(10, 100, 'carrier_command','Drag me around !',10);
-
-    //bmpText.inputEnabled = true;
-
-    //bmpText.input.enableDrag();
+    //Whether the blimp has been hit by the player yet.
+    this.hit = false;
 }
 
 function letterOutOfBounds(letter) {
@@ -185,7 +167,7 @@ function blimpOutOfBounds(blimp){
     blimp.kill();
 }
 
-Letter.prototype = Object.create(Phaser.BitmapText.prototype);
+Letter.prototype = Object.create(Phaser.Sprite.prototype);
 Letter.prototype.constructor = Letter;
 
 Blimp.prototype = Object.create(Phaser.Sprite.prototype);
@@ -215,6 +197,27 @@ Blimp.prototype.update = function(){
     }
 }
 
+
+
+Letter.prototype.update = function(){
+
+    //As a simple form of hit detection (Phaser also supports pixel perfect HD, but i'll keep it simple) we'll detect the bounds and see if they intersect.
+    var boundsA = this.player.getBounds();
+    var boundsB = this.getBounds();
+
+    //If the bounds intersect and it's not already hit.
+    if(Phaser.Rectangle.intersects(boundsA, boundsB) && !this.hit){
+        score += this.letter;
+        scoreText.text = score;
+        this.hit = true;
+        this.character.destroy();
+        this.kill();
+    }
+
+  this.character.x = this.x-10;
+  this.character.y = this.y+10;
+}
+
 //We give our player a type of Phaser.Sprite and assign it's constructor method.
 Player.prototype = Object.create(Phaser.Sprite.prototype);
 Player.prototype.constructor = Player;
@@ -224,15 +227,54 @@ Player.prototype.update = function(){
     //If the target's (which we have assigned as this.game.input) active pointer is down
     if (this.target.activePointer.isDown){
         //Make our new target position the pointers position
-        this.targetPos = {x:this.target.x, y:this.target.y};
+        //this.targetPos = {x:this.target.x, y:this.target.y};
     }
 
     //Now work out the velocities by working out the difference between the target and the current position, and use an easer to smooth it.
-    var velX = (this.targetPos.x-this.x)/this.easer;
-    var velY = (this.targetPos.y-this.y)/this.easer;
+    //var velX = (this.targetPos.x-this.x)/this.easer;
+    //var velY = (this.targetPos.y-this.y)/this.easer;
 
     //Set the Players physics body's velocity
-    this.body.velocity.setTo(velX, velY);
+    //this.body.velocity.setTo(velX, velY);
+
+    if (cursors.left.isDown)
+      {
+          //  Move to the left
+          this.body.velocity.x = -150;
+      }
+      else if (cursors.right.isDown)
+      {
+          //  Move to the right
+          this.body.velocity.x = 150;
+      }
+
+      //  Allow the player to jump if they are touching the ground.
+  else if (cursors.up.isDown)
+  {
+      this.body.velocity.y = -150;
+  }
+  else if (cursors.down.isDown)
+  {
+      this.body.velocity.y = 150;
+  }
+  else if (cursors.up.isDown && cursors.right.isDown) {
+    this.body.velocity.setTo(150, 150);
+  }
+  else if (cursors.up.isDown && cursors.left.isDown) {
+    this.body.velocity.setTo(-150, 150);
+  }
+  else if (cursors.down.isDown && cursors.right.isDown) {
+    this.body.velocity.setTo(150, -150);
+  }
+  else if (cursors.down.isDown && cursors.left.isDown) {
+    this.body.velocity.setTo(-150, -150);
+  }
+  else
+  {
+    this.body.velocity.setTo(0, 0);
+
+    //this.body.allowGravity = false;
+  }
 
 }
 
@@ -263,3 +305,5 @@ function newGame(){
 
 var game = new Phaser.Game(stageSize.width, stageSize.height, Phaser.AUTO, 'game');
 game.state.add('game', GameState, true);
+var score = '';
+var scoreText, cursors;
