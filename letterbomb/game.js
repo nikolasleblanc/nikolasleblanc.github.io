@@ -27,7 +27,7 @@ GameState.prototype.create = function() {
     );
 
 
-    scoreText = this.game.add.text(16, 16, '', { fontSize: '32px', fill: '#000' });
+    scoreText = this.game.add.text(320, 20, 'Word: ', { font: '16px Arial', fill: '#ffffff'});
 
 
     cursors = this.game.input.keyboard.createCursorKeys();
@@ -69,7 +69,6 @@ GameState.prototype.create = function() {
 }
 
 GameState.prototype.update = function() {
-    this.game.physics.arcade.collide(this.textGroup, this.player);
     //This method is called every frame.
     //We're not doing anything but updating the fps here.
     if (this.game.time.fps !== 0) {
@@ -80,8 +79,6 @@ GameState.prototype.update = function() {
 	    gameOver(this.player, this.blimpGroup, this.blimpTimer);
 	}
     this.timer.setText('Time: ' + Math.abs(new Date().getTime() - startTime)/1000);
-  scoreText.x = this.player.x-50;
-  scoreText.y = this.player.y-50;
 }
 
 var Player = function(game, x, y, target){
@@ -142,13 +139,14 @@ var Letter = function(game, player) {
     Phaser.Sprite.call(this, game, x, y, 'letter');
 
     this.player = player;
-    this.character = this.game.add.text(x-10, y+10, letter, { fontSize: '32px', fill: '#000' });
+    this.character = this.game.add.text(x-10, y, letter, { fontSize: '32px', fill: '#000' });
 
     //Again, enable physics and set velocity
     this.game.physics.enable(this, Phaser.Physics.ARCADE);
     this.body.allowGravity = false;
     this.body.gravity.setTo(0);
     this.body.velocity.x = -100;
+    this.alpha = 0;
     //this.body.velocity.setTo(this.speed, 0);
 
     //Set a scale between 1 and 1.5 for some random sizes
@@ -213,7 +211,7 @@ Letter.prototype.update = function(){
     //If the bounds intersect and it's not already hit.
     if(Phaser.Rectangle.intersects(boundsA, boundsB) && !this.hit){
         score += this.letter;
-        scoreText.text = score;
+        scoreText.setText('Word: ' + score);
         this.hit = true;
         this.character.destroy();
         this.kill();
