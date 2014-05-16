@@ -139,18 +139,21 @@ var Letter = function(game, player) {
     Phaser.Sprite.call(this, game, x, y, 'letter');
 
     this.player = player;
-    this.character = this.game.add.text(x-10, y, letter, { fontSize: '32px', fill: '#000' });
+    this.character = this.game.add.text(x-10, y-100, letter, { fontSize: '32px', fill: '#000' });
 
     //Again, enable physics and set velocity
     this.game.physics.enable(this, Phaser.Physics.ARCADE);
     this.body.allowGravity = false;
     this.body.gravity.setTo(0);
-    this.body.velocity.x = -100;
+    var adj = Math.random()*2.5;
+    this.body.velocity.x = -100*adj;
     this.alpha = 0;
     //this.body.velocity.setTo(this.speed, 0);
 
     //Set a scale between 1 and 1.5 for some random sizes
     this.letter = letter;
+    this.character.scale.setTo(adj);
+    this.character.y = -50;
     this.scale.setTo(.2);
     this.anchor.setTo(0.5, 0.5);
 
@@ -167,6 +170,7 @@ function letterOutOfBounds(letter) {
 }
 
 function blimpOutOfBounds(blimp){
+    blimp.character.destroy();
     blimp.kill();
 }
 
@@ -230,15 +234,15 @@ Player.prototype.update = function(){
     //If the target's (which we have assigned as this.game.input) active pointer is down
     if (this.game.input.isDown){
         //Make our new target position the pointers position
-        this.targetPos = {x:this.target.x, y:this.target.y};
+        //this.targetPos = {x:this.target.x, y:this.target.y};
     }
 
     //Now work out the velocities by working out the difference between the target and the current position, and use an easer to smooth it.
-    var velX = (this.targetPos.x-this.x)/this.easer;
-    var velY = (this.targetPos.y-this.y)/this.easer;
+    //var velX = (this.targetPos.x-this.x)/this.easer;
+    //var velY = (this.targetPos.y-this.y)/this.easer;
 
     //Set the Players physics body's velocity
-    this.body.velocity.setTo(velX, velY);
+    //this.body.velocity.setTo(velX, velY);
 
     if (cursors.left.isDown)
       {
