@@ -228,17 +228,17 @@ Player.prototype.constructor = Player;
 Player.prototype.update = function(){
 
     //If the target's (which we have assigned as this.game.input) active pointer is down
-    if (this.target.activePointer.isDown){
+    if (this.game.input.isDown){
         //Make our new target position the pointers position
-        //this.targetPos = {x:this.target.x, y:this.target.y};
+        this.targetPos = {x:this.target.x, y:this.target.y};
     }
 
     //Now work out the velocities by working out the difference between the target and the current position, and use an easer to smooth it.
-    //var velX = (this.targetPos.x-this.x)/this.easer;
-    //var velY = (this.targetPos.y-this.y)/this.easer;
+    var velX = (this.targetPos.x-this.x)/this.easer;
+    var velY = (this.targetPos.y-this.y)/this.easer;
 
     //Set the Players physics body's velocity
-    //this.body.velocity.setTo(velX, velY);
+    this.body.velocity.setTo(velX, velY);
 
     if (cursors.left.isDown)
       {
